@@ -16,20 +16,20 @@ The following API endpoints are provided:
 
 """
 from __future__ import absolute_import, unicode_literals
-from docopt import docopt
 
 import base64
 import json
 from random import randint
 
 from aiohttp import web
+from docopt import docopt
 
 # Command line handling part.
 arguments = docopt(__doc__)
 # Convert arguments to usable types.
 port = int(arguments["--port"])
 # Need to escape the address for ipv6.
-address = arguments["--address"].replace(":", "\:")
+address = arguments["--address"].replace(":", r"\:")
 is_flaky = arguments["--flaky"]
 
 # Set to lower values to increase the probability of a failure.
