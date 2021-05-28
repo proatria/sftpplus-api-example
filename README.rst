@@ -27,3 +27,15 @@ To start the server just run::
 Check command line options::
 
     python api-server.py --help
+
+You can generate a new self-signed certificate using::
+
+    openssl req -x509 -newkey rsa:2048 -nodes  -days 365 \
+        -keyout server-key.pem \
+        -out server-cert.pem
+    cat server-key.pem server-cert.pem  > server-key-and-cert.pem
+    rm server-key.pem server-cert.pem
+
+To start the API server in HTTPS mode use::
+
+    python api-server.py --certificate server-key-and-cert.pem

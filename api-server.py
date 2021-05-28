@@ -7,6 +7,9 @@ Usage:
 -h --help           Show this help.
 -p --port=8000         Listen to a specific port.  [default: 8080]
 -a --address=127.0.0.1 Listen on specific address.  [default: 0.0.0.0]
+-c --certificate=PATH  Enable HTTPS by defining the path
+                  to a file containing server key, certificate, and CA chain
+                  all PEM format and stored in a single file.
 -f --flaky  Introduce random errors to test SFTPPlus API retry functionality.
 
 The following API endpoints are provided:
@@ -19,6 +22,7 @@ from __future__ import absolute_import, unicode_literals
 
 import base64
 import json
+import ssl
 from random import randint
 
 from aiohttp import web
@@ -31,6 +35,8 @@ port = int(arguments["--port"])
 # Need to escape the address for ipv6.
 address = arguments["--address"].replace(":", r"\:")
 is_flaky = arguments["--flaky"]
+certificate = arguments["--certificate"]
+
 
 # Set to lower values to increase the probability of a failure.
 _FLAKY_DEGREE = 3
@@ -55,7 +61,6 @@ ACCOUNTS = {
             # },
         },
     },
-
     # An account with default configuration extracted from
     # the default SFTPPlus group.
     # SSH-Key authentication is disabled for this user.
@@ -64,7 +69,6 @@ ACCOUNTS = {
         "ssh-public-key": "",
         "configuration": {},
     },
-
 }
 
 
@@ -98,7 +102,7 @@ async def handle_auth(request):
             status=401, text="User not handled by our API. Try other method."
         )
 
-    response = {'account': account.get("configuration", {})}
+    response = {"account": account.get("configuration", {})}
 
     if credentials["type"] in ["password", "password-basic-auth"]:
         # We have password based authentication.
@@ -180,5 +184,11 @@ app.add_routes(
     ]
 )
 
+
+ssl_context = None
+if certificate:
+    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+    ssl_context.load_cert_chain(certificate, certificate)
+
 if __name__ == "__main__":
-    web.run_app(app, host=address, port=port)
+    web.run_app(app, host=address, port=port, ssl_context=ssl_context)
