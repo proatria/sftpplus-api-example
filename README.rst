@@ -22,8 +22,8 @@ Create the run environment::
 
 To start the server just run::
 
-    python server.py
+    python api-server.py
 
 Check command line options::
 
-    python server.py --help
+    python api-server.py --help

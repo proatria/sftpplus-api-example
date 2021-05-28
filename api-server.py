@@ -54,15 +54,17 @@ ACCOUNTS = {
             #    'file_api_token': 'fav1_some_value',
             # },
         },
-        # An account with default configuration extracted from
-        # the default SFTPPlus group.
-        # SSH-Key authentication is disabled for this user.
-        "default-user": {
-            "password": "default-pass",
-            "ssh-public-key": "",
-            "configuration": {},
-        },
-    }
+    },
+
+    # An account with default configuration extracted from
+    # the default SFTPPlus group.
+    # SSH-Key authentication is disabled for this user.
+    "default-user": {
+        "password": "default-pass",
+        "ssh-public-key": "",
+        "configuration": {},
+    },
+
 }
 
 
@@ -80,7 +82,7 @@ async def handle_auth(request):
     print("New authentication request received")
     print(json.dumps(request_json, indent=2))
 
-    if randint(0, _FLAKY_DEGREE) == 0:
+    if is_flaky and randint(0, _FLAKY_DEGREE) == 0:
         print("TRIGGERING AN EMULATED FAILURE")
         return web.Response(status=500, text="Failed to process the request")
 
@@ -96,16 +98,17 @@ async def handle_auth(request):
             status=401, text="User not handled by our API. Try other method."
         )
 
-    configuration = account.get("configuration", {})
+    response = {'account': account.get("configuration", {})}
 
-    if credentials["type"] == "password":
+    if credentials["type"] in ["password", "password-basic-auth"]:
         # We have password based authentication.
         if credentials["content"] != account["password"]:
             print("INVALID PASSWORD")
             return web.Response(status=403, text="Password rejected.")
 
         # Valid password.
-        return web.json_response(configuration)
+        print("VALID PASSWORD")
+        return web.json_response(response)
 
     if credentials["type"] == "ssh-key":
         # We have SSH-key based authentication.
@@ -117,7 +120,8 @@ async def handle_auth(request):
             return web.Response(status=403, text="SSH-Key rejected.")
 
         # Valid SSH key authentication.
-        return web.json_response({"account": configuration})
+        print("VALID SSH-KEY")
+        return web.json_response(response)
 
     return web.Response(status=403, text="Credentials type not supported.")
 
@@ -137,7 +141,7 @@ async def handle_event(request):
     print("Payload:")
     await get_json(request)
 
-    if randint(0, _FLAKY_DEGREE) == 0:
+    if is_flaky and randint(0, _FLAKY_DEGREE) == 0:
         print("TRIGGERING AN EMULATED FAILURE")
         return web.Response(status=500, text="Failed to process the request")
 
